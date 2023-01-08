@@ -1,70 +1,41 @@
 import { useEffect, useState } from "react";
+import Movie from "./Movie";
 
 function App() {
   const [loading, setLoading] = useState(true);
-  const [coins, setCoins] = useState([]);
+  const [movies, setMovies] = useState([]);
 
-  const [usd, setUsd] = useState(0);
-  const [currencyInfo, setCurrencyInfo] = useState();
+  const getMovie = async() => {
+    const json = await (
+      await fetch(
+        `https://yts.mx/api/v2/list_movies.json?minimum_rating=9&sort_by=year`
+      )
+    ).json();
 
-  const onTyping = (event) => setUsd(event.target.value);
-  const onSelect = (event) => {
-    const selectionInfo = event.target.value.split(",");
-    setCurrencyInfo({
-      value: Number(selectionInfo[0]),
-      symbol: selectionInfo[1]
-    });
-  }
+    setMovies(json.data.movies);
+    setLoading(false);
+  };
   
   useEffect(() => {
-    fetch("https://api.coinpaprika.com/v1/tickers")
-      .then((response) => response.json())
-      .then((json) => {
-        const defaultOption = json[0];
-        setCurrencyInfo({
-          value: defaultOption.quotes.USD.price,
-          symbol: defaultOption.symbol
-        });
-
-        setCoins(json);
-        setLoading(false);
-      });
+    getMovie();
   }, []);
 
   return (
     <div>
-      <h1>The Coins! {loading ? "" : `(${coins.length})`}</h1>
-      <div>
-        <input
-          id="usd"
-          value={usd}
-          onChange={onTyping}
-          type="number"
-        />
-        <label htmlFor="usd">USD</label>
-      </div>
-      {loading ? null : (
-        <div>
-        <input
-          id="currency"
-          value={usd / currencyInfo.value}
-          type="number"
-          disabled
-        />
-        <label htmlFor="currency">{currencyInfo.symbol}</label>
-        </div>
-      )}
-      <hr />
       {loading ? (
-        <strong>Loading...</strong>
+        <h1>Loading...</h1>
       ) : (
-        <select onChange={onSelect}>
-          {coins.map((coin) => (
-            <option key={coin.id} value={[coin.quotes.USD.price, coin.symbol]}>
-              {coin.name} ({coin.symbol}): ${coin.quotes.USD.price}
-            </option>
+        <div>
+          {movies.map((movie) => (
+            <Movie
+              key={movie.id}
+              coverImg={movie.medium_cover_image}
+              title={movie.title}
+              summary={movie.summary}
+              genres={movie.genres}
+            />
           ))}
-        </select>
+        </div>
       )}
     </div>
   );
